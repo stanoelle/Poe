@@ -20,17 +20,12 @@ def send_welcome(message):
 
 @bot.message_handler(func=lambda message: True)
 def claude(message):
-    if message.from_user.id != adminId:
-        bot.reply_to(
-            message, "<b>You are not authorized to use this bot.</b>", parse_mode="HTML")
-        return
-    try:
-        bot.send_chat_action(message.chat.id, 'typing')
-        for chunk in client.send_message(
-            chatbot="capybara",
-            message=message.text,
-            with_chat_break="yes",
-            timeout=20,
+    bot.send_chat_action(message.chat.id, 'typing')
+    for chunk in client.send_message(
+        chatbot="capybara",
+        message=message.text,
+        with_chat_break="false",
+        timeout=20,
         ):
             pass
         bot.reply_to(message, chunk["text"])
