@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 token = "m87UlQ4NDefo_CAwj-9kCQ%3D%3D"
-bot_token = "6292300109:AAHsRHtBZrTiuOMpZ-YEW_JF2psyMGWzSIA"
+bot_token = "6179975944:AAEgrJwmzF0urBQOMYOVhGyosAFGoGYTc14"
 adminId = 6113550151
 
 bot = telebot.TeleBot(bot_token)
