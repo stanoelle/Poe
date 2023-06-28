@@ -29,7 +29,7 @@ def claude(message):
         timeout=20,
         ):
             pass
-    bot.reply_to(message, chunk["text"])
+        bot.reply_to(message, chunk["text"])
     except Exception as e:
         bot.reply_to(message, f"Oops! Something went wrong. {e}")
 
