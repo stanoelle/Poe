@@ -27,7 +27,7 @@ def claude(message):
     try:
         bot.send_chat_action(message.chat.id, 'typing')
         for chunk in client.send_message(
-            chatbot="a2",
+            chatbot="capybara",
             message=message.text,
             with_chat_break="yes",
             timeout=20,
