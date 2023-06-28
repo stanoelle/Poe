@@ -499,8 +499,7 @@ if __name__ == "__main__":
     restart_handler = CommandHandler("restart", restart_bot)
     #summarize_handler = CommandHandler("summarize", summarize)
     imagine_handler = CommandHandler("imagine", imagine) 
-
-    application.add_handler(start_handler)
+    
     application.add_handler(reset_handler)
     application.add_handler(purge_handler)
     application.add_handler(select_handler)
