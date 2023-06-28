@@ -21,7 +21,8 @@ def send_welcome(message):
 @bot.message_handler(func=lambda message: True)
 def claude(message):
     bot.send_chat_action(message.chat.id, 'typing')
-    for chunk in client.send_message(
+    try:
+        for chunk in client.send_message(
         chatbot="capybara",
         message=message.text,
         with_chat_break="false",
