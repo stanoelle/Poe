@@ -511,5 +511,6 @@ if __name__ == "__main__":
     application.add_handler(restart_handler)
     #application.add_handler(summarize_handler)
     application.add_handler(imagine_handler)
+    application.bot.setWebhook(webhook_url)
     app.run(host='0.0.0.0', port=8080)
 
