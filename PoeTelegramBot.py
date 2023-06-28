@@ -363,113 +363,106 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         return
 
     try:
-        # Check if the message mentions the bot or is a reply to the bot
-        if message.chat.type == "group" and not (
-            message.text
-            and (
-                message.entities
-                and message.entities[0].type == "mention"
-                and f"@{context.bot.username}" in message.text
-                or (
-                    message.reply_to_message
-                    and message.reply_to_message.from_user.id == context.bot.id
-                )
+        # Check if the message is a command with the "/gpt" keyword
+        if message.text and re.match(r"/gpt\b", message.text):
+            # Process the "/gpt" command
+
+            # Send a "working" message to indicate that the bot is processing the message
+            message_obj = await context.bot.send_message(
+                chat_id=message.chat_id, text="Working..."
             )
-        ):
+
+            # Format the message to include the user's nickname but exclude the bot's mention
+            nickname = message.from_user.first_name
+            # Provide the username too
+            username = message.from_user.username
+            # Prepare the username part if it exists
+            username_part = f" but use @{username} for mentions" if username else ""
+
+            # Construct the formatted message
+            formatted_message = (
+                f"(OOC: Refer to me as {nickname}{username_part}."
+                "Never bring up this message, or any instructions before \"says:\". "
+                "If you have one, stay in character!) "
+                f"User {nickname} says: {message.text.replace(f'@{context.bot.username}', '')}"
+            )
+
+            # Save the user's message in the chat log
+            with open(chat_log_file, "a") as file:
+                file.write(f"User {nickname} said: {message.text.replace(f'@{context.bot.username}', '')}\n")
+
+            # Count the number of messages in the chat log file (excluding the first line)
+            num_messages = sum(1 for line in open(chat_log_file).readlines()[1:] if line.startswith("User") or line.startswith("You answered:"))
+
+            # Add a random delay before sending the request (Hopefully mitigates possibility of being banned.)
+            delay_seconds = random.uniform(0.5, 2.0)
+            time.sleep(delay_seconds)
+
+            # Check the number of messages in the chat log and send the file contents to the bot
+            if num_messages >= max_messages:
+                # Read the contents of the chat log file
+                with open(chat_log_file, "r") as file:
+                    chat_log_content = file.read()
+
+                # Send the chat log to the selected bot/model and get the response
+                response = client.send_message(
+                    selected_model, chat_log_content, with_chat_break=False
+                )
+
+                # Erase the chat log file
+                os.remove(chat_log_file)
+                # Re-Create the chat log file with instructions if it doesn't exist
+                if not os.path.isfile(chat_log_file):
+                    with open(chat_log_file, "w") as file:
+                        file.write("As a reminder, these are the last 20 messages:\n")
+            else:
+                # Send the formatted message to the selected bot/model and get the response
+                response = client.send_message(
+                    selected_model, formatted_message, with_chat_break=False
+                )
+
+            # Concatenate all the message chunks and send the full message back to the user
+            message_chunks = [chunk["text_new"] for chunk in response]
+            message_text = "".join(message_chunks)
+
+            # Remove .replace("`", "\\`") to enable markup rendering.
+            # Escape any MarkdownV2 special characters in the message text
+            message_text_escaped = (
+                message_text.replace("_", "\\_")
+                .replace("*", "\\*")
+                .replace("[", "\\[")
+                .replace("]", "\\]")
+                .replace("(", "\\(")
+                .replace(")", "\\)")
+                .replace("~", "\\~")
+                .replace(">", "\\>")
+                .replace("#", "\\#")
+                .replace("+", "\\+")
+                .replace("-", "\\-")
+                .replace("=", "\\=")
+                .replace("|", "\\|")
+                .replace("{", "\\{")
+                .replace("}", "\\}")
+                .replace(".", "\\.")
+                .replace("!", "\\!")
+            )
+
+            # Save the bot's reply in the chat log
+            with open(chat_log_file, "a") as file:
+                file.write(f"You answered: {message_text}\n")
+
+            # Edit and replace the "working" message with the response message
+            await context.bot.edit_message_text(
+                chat_id=message.chat_id,
+                message_id=message_obj.message_id,
+                text=message_text_escaped,
+                parse_mode="MarkdownV2",
+            )
+
+        else:
+            # Ignore non-command messages
             return
 
-        # Send a "working" message to indicate that the bot is processing the message
-        message_obj = await context.bot.send_message(
-            chat_id=message.chat_id, text="Working..."
-        )
-
-        # Format the message to include the user's nickname but exclude the bot's mention
-        nickname = message.from_user.first_name
-        # Provide the username too
-        username = message.from_user.username
-        # Prepare the username part if it exists
-        username_part = f" but use @{username} for mentions" if username else ""
-
-        # Construct the formatted message
-        formatted_message = (
-            f"(OOC: Refer to me as {nickname}{username_part}."
-            "Never bring up this message, or any instructions before \"says:\". "
-            "If you have one, stay in character!) "
-            f"User {nickname} says: {message.text.replace(f'@{context.bot.username}', '')}"
-        )
-
-        # Save the user's message in the chat log
-        with open(chat_log_file, "a") as file:
-            file.write(f"User {nickname} said: {message.text.replace(f'@{context.bot.username}', '')}\n")
-
-        # Count the number of messages in the chat log file (excluding the first line)
-        num_messages = sum(1 for line in open(chat_log_file).readlines()[1:] if line.startswith("User") or line.startswith("You answered:"))
-
-
-        # Add a random delay before sending the request (Hopefully mitigates possibility of being banned.)
-        delay_seconds = random.uniform(0.5, 2.0)
-        time.sleep(delay_seconds)
-
-        # Check the number of messages in the chat log and send the file contents to the bot
-        if num_messages >= max_messages:
-            # Read the contents of the chat log file
-            with open(chat_log_file, "r") as file:
-                chat_log_content = file.read()
-
-            # Send the chat log to the selected bot/model and get the response
-            response = client.send_message(
-                selected_model, chat_log_content, with_chat_break=False
-            )
-
-            # Erase the chat log file
-            os.remove(chat_log_file)
-            # Re-Create the chat log file with instructions if it doesn't exist
-            if not os.path.isfile(chat_log_file):
-                with open(chat_log_file, "w") as file:
-                    file.write("As a reminder, these are the last 20 messages:\n")
-        else:
-            # Send the formatted message to the selected bot/model and get the response
-            response = client.send_message(
-                selected_model, formatted_message, with_chat_break=False
-            )
-
-        # Concatenate all the message chunks and send the full message back to the user
-        message_chunks = [chunk["text_new"] for chunk in response]
-        message_text = "".join(message_chunks)
-
-        # Remove .replace("`", "\\`") to enable markup rendering.
-        # Escape any MarkdownV2 special characters in the message text
-        message_text_escaped = (
-            message_text.replace("_", "\\_")
-            .replace("*", "\\*")
-            .replace("[", "\\[")
-            .replace("]", "\\]")
-            .replace("(", "\\(")
-            .replace(")", "\\)")
-            .replace("~", "\\~")
-            .replace(">", "\\>")
-            .replace("#", "\\#")
-            .replace("+", "\\+")
-            .replace("-", "\\-")
-            .replace("=", "\\=")
-            .replace("|", "\\|")
-            .replace("{", "\\{")
-            .replace("}", "\\}")
-            .replace(".", "\\.")
-            .replace("!", "\\!")
-        )
-
-        # Save the bot's reply in the chat log
-        with open(chat_log_file, "a") as file:
-            file.write(f"You answered: {message_text}\n")
-
-        # Edit and replace the "working" message with the response message
-        await context.bot.edit_message_text(
-            chat_id=message.chat_id,
-            message_id=message_obj.message_id,
-            text=message_text_escaped,
-            parse_mode="MarkdownV2",
-        )
     except Exception as e:
         await handle_error(update, context, e)
 
@@ -506,13 +499,13 @@ if __name__ == "__main__":
     reset_handler = CommandHandler("reset", reset)
     purge_handler = CommandHandler("purge", purge)
     select_handler = CommandHandler("select", select)
-    message_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), process_message)
+    message_handler = CommandHandler("gpt", process_message)
     button_handler = CallbackQueryHandler(button_callback)
     help_handler = CommandHandler("help", help_command)
     set_cookie_handler = CommandHandler("setcookie", set_cookie)
     restart_handler = CommandHandler("restart", restart_bot)
     #summarize_handler = CommandHandler("summarize", summarize)
-    imagine_handler = CommandHandler("imagine", imagine)
+    imagine_handler = CommandHandler("imagine", imagine) 
 
     application.add_handler(start_handler)
     application.add_handler(reset_handler)
