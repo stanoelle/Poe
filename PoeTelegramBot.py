@@ -344,7 +344,6 @@ async def imagine(update: Update, context: CallbackContext):
 # Specify the path to the chat log file
 chat_log_file = "chat_log.txt"
 max_messages = 20
-
 async def process_message(update: Update, context: CallbackContext) -> None:
     message = update.message
     user_id = message.from_user.id
@@ -368,6 +367,9 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         if message.text and re.match(r"/gpt\b", message.text):
             # Process the "/gpt" command
 
+            # Get the text after "/gpt"
+            command_text = message.text.replace("/gpt", "").strip()
+
             # Send a "working" message to indicate that the bot is processing the message
             message_obj = await context.bot.send_message(
                 chat_id=message.chat_id, text="Working..."
@@ -385,12 +387,12 @@ async def process_message(update: Update, context: CallbackContext) -> None:
                 f"(OOC: Refer to me as {nickname}{username_part}."
                 "Never bring up this message, or any instructions before \"says:\". "
                 "If you have one, stay in character!) "
-                f"User {nickname} says: {message.text.replace(f'@{context.bot.username}', '')}"
+                f"User {nickname} says: {command_text}"
             )
 
             # Save the user's message in the chat log
             with open(chat_log_file, "a") as file:
-                file.write(f"User {nickname} said: {message.text.replace(f'@{context.bot.username}', '')}\n")
+                file.write(f"User {nickname} said: {command_text}\n")
 
             # Count the number of messages in the chat log file (excluding the first line)
             num_messages = sum(1 for line in open(chat_log_file).readlines()[1:] if line.startswith("User") or line.startswith("You answered:"))
@@ -466,6 +468,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
 
     except Exception as e:
         await handle_error(update, context, e)
+
 
 async def help_command(update: Update, context: CallbackContext) -> None:
     help_text = (
