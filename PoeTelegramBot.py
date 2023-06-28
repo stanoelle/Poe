@@ -480,6 +480,7 @@ async def handle_error(update: Update, context: CallbackContext, exception: Exce
         chat_id=update.effective_chat.id,
         text=error_message,
     )
+webhook_url = 'https://bard-tgg.onrender.com/bot-webhook' 
 @app.route('/bot-webhook', methods=['POST'])
 def webhook_handler():
     update = Update.de_json(request.stream.read().decode('utf-8'), updater.bot)
