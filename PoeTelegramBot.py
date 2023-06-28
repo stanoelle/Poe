@@ -23,7 +23,7 @@ from telegram.ext import (
 load_dotenv()
 
 # Get environment variables
-TELEGRAM_TOKEN = "6179975944:AAEgrJwmzF0urBQOMYOVhGyosAFGoGYTc14"
+TELEGRAM_TOKEN = "6292300109:AAHsRHtBZrTiuOMpZ-YEW_JF2psyMGWzSIA"
 POE_COOKIE = "m87UlQ4NDefo_CAwj-9kCQ%3D%3D"
 ALLOWED_USERS = os.getenv("ALLOWED_USERS")
 ALLOWED_CHATS = os.getenv("ALLOWED_CHATS")
