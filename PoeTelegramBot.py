@@ -59,24 +59,7 @@ default_model = os.getenv("DEFAULT_MODEL")
 
 # Set the default model
 selected_model = default_model if default_model else "capybara"
-
-async def start(update: Update, context: CallbackContext) -> None:
-    user_id = update.effective_user.id
-    chat_id = update.effective_chat.id
-
-    if ALLOWED_CHATS and str(chat_id) not in ALLOWED_CHATS.split(",") and str(user_id) not in ALLOWED_USERS.split(","):
-        # Deny access if the user is not in the allowed users list and the chat is not in the allowed chats list
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text="Sorry, you are not allowed to use this bot. If you are the one who set up this bot, add your Telegram UserID to the \"ALLOWED_USERS\" environment variable in your .env file, or use it in the \"ALLOWED_CHATS\" you specified."
-        )
-        return
-
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="I'm a Poe.com Telegram Bot. Use /help for a list of commands.",
-    )
-
+app = Flask(__name__)
 async def purge(update: Update, context: CallbackContext):
     try:
         # Purge the entire conversation
@@ -495,11 +478,15 @@ async def handle_error(update: Update, context: CallbackContext, exception: Exce
         chat_id=update.effective_chat.id,
         text=error_message,
     )
+@app.route('/bot-webhook', methods=['POST'])
+def webhook_handler():
+    update = Update.de_json(request.stream.read().decode('utf-8'), updater.bot)
+    dispatcher.process_update(update)
+    return 'OK'
+
 
 if __name__ == "__main__":
     application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
-    start_handler = CommandHandler("start", start)
     reset_handler = CommandHandler("reset", reset)
     purge_handler = CommandHandler("purge", purge)
     select_handler = CommandHandler("select", select)
@@ -522,5 +509,5 @@ if __name__ == "__main__":
     application.add_handler(restart_handler)
     #application.add_handler(summarize_handler)
     application.add_handler(imagine_handler)
+    application.run(host='0.0.0.0', port=80)
 
-    application.run_polling()
