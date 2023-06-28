@@ -3,9 +3,11 @@ import poe
 import os
 import json
 import random
+from telegram.ext import WebhookHandler
 import time
 import shutil
 from BingImageCreator import ImageGen
+from flask import Flask, request
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import (
@@ -20,7 +22,7 @@ from telegram.ext import (
 
 # Load environment variables from .env file
 load_dotenv()
-
+app = Flask(__name__)
 # Get environment variables
 TELEGRAM_TOKEN = "6031689793:AAFyTehAoEqEXcrpGwajl-R4Zed5HYYzfTQ"
 POE_COOKIE = "m87UlQ4NDefo_CAwj-9kCQ%3D%3D"
@@ -498,6 +500,14 @@ async def handle_error(update: Update, context: CallbackContext, exception: Exce
         chat_id=update.effective_chat.id,
         text=error_message,
     )
+handler = WebhookHandler(TELEGRAM_TOKEN)
+handler.setWebhook(f"https://bard-g.onrender.com/bot-webhook")
+@app.route(f"/bot-webhook", methods=["POST"])
+def webhook_handler():
+    update = request.get_json()
+    handler.process_update(update)
+    return "OK"
+
 
 if __name__ == "__main__":
     application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
@@ -526,4 +536,4 @@ if __name__ == "__main__":
     #application.add_handler(summarize_handler)
     application.add_handler(imagine_handler)
 
-    application.run_polling()
+    app.run(host=0.0.0.0, port=80)
