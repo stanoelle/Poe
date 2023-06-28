@@ -1,7 +1,7 @@
 import logging
 import poe
 import os
-import Flask
+import flask
 import json
 import re
 import random
